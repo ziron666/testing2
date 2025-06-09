@@ -1,0 +1,172 @@
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Chat Room</title>
+  <style>
+    body { font-family: sans-serif; background: #f3f3f3; margin: 0; padding: 0; display: flex; flex-direction: column; height: 100vh; }
+    #login, #chat { padding: 20px; margin: auto; width: 100%; max-width: 600px; }
+    #chat { flex-grow: 1; display: none; flex-direction: column; }
+    #messages { flex-grow: 1; overflow-y: auto; background: #fff; padding: 10px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #ccc; }
+    .message { margin-bottom: 10px; padding: 6px 10px; background: #e0e0e0; border-radius: 6px; position: relative; }
+    .message.you { background: #d1ffd1; text-align: right; }
+    .message img { max-width: 200px; max-height: 200px; display: block; margin-top: 5px; border-radius: 4px; }
+    .message .delete { position: absolute; top: 4px; right: 6px; cursor: pointer; color: red; font-size: 12px; }
+    input, button { padding: 10px; margin: 5px 0; width: 100%; box-sizing: border-box; }
+    #inputArea { display: flex; gap: 5px; }
+    #emojiList span { cursor: pointer; font-size: 20px; margin-right: 5px; }
+  </style>
+</head>
+<body>
+  <div id="login">
+    <h2>Login Chat Room</h2>
+    <input id="email" type="email" placeholder="Email"/>
+    <input id="password" type="password" placeholder="Password"/>
+    <button onclick="login()">Login</button>
+    <button onclick="register()">Register</button>
+  </div>
+
+  <div id="chat">
+    <div id="messages"></div>
+    <div id="emojiList">😊 😂 ❤️ 😍 🙏 😢 😎 🤔 🎉 😡</div>
+    <div id="inputArea">
+      <input id="messageInput" type="text" placeholder="Ketik pesan..."/>
+      <input id="imageInput" type="file" accept="image/*"/>
+      <button onclick="sendMessage()">Kirim</button>
+    </div>
+    <button onclick="logout()">Logout</button>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyDMfDeZ05dkixybwZ2Z_2FWU8nc6RtQ8P8",
+      authDomain: "test123-40d1b.firebaseapp.com",
+      databaseURL: "https://test123-40d1b-default-rtdb.firebaseio.com",
+      projectId: "test123-40d1b",
+      storageBucket: "test123-40d1b.appspot.com",
+      messagingSenderId: "842326097074",
+      appId: "1:842326097074:web:cd13a5f1bb3b69477dddab"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.database();
+    let currentUser = null;
+
+    auth.onAuthStateChanged(user => {
+      if (user) {
+        currentUser = user;
+        document.getElementById("login").style.display = "none";
+        document.getElementById("chat").style.display = "flex";
+        listenMessages();
+      } else {
+        currentUser = null;
+        document.getElementById("login").style.display = "block";
+        document.getElementById("chat").style.display = "none";
+      }
+    });
+
+    function login() {
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+      auth.signInWithEmailAndPassword(email, password).catch(error => alert(error.message));
+    }
+
+    function register() {
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+      auth.createUserWithEmailAndPassword(email, password).catch(error => alert(error.message));
+    }
+
+    function logout() {
+      auth.signOut();
+    }
+
+    function listenMessages() {
+      db.ref("messages").off();
+      db.ref("messages").on("value", snapshot => {
+        const messagesDiv = document.getElementById("messages");
+        messagesDiv.innerHTML = "";
+        snapshot.forEach(child => {
+          const data = child.val();
+          const msg = document.createElement("div");
+          msg.className = "message" + (data.uid === currentUser.uid ? " you" : "");
+          msg.innerHTML = `
+            <div>${data.text || ""}</div>
+            ${data.image ? `<img src="${data.image}" />` : ""}
+            ${data.uid === currentUser.uid ? `<div class="delete" onclick="deleteMessage('${child.key}')">🗑️</div>` : ""}
+          `;
+          messagesDiv.appendChild(msg);
+        });
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      });
+    }
+
+    function compressAndConvertToBase64(file, callback) {
+      const reader = new FileReader();
+      reader.onload = event => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          const maxWidth = 800;
+          const scale = maxWidth / img.width;
+          canvas.width = maxWidth;
+          canvas.height = img.height * scale;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          callback(canvas.toDataURL("image/jpeg", 0.6));
+        };
+        img.src = event.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function sendMessage() {
+      const text = document.getElementById("messageInput").value;
+      const file = document.getElementById("imageInput").files[0];
+      if (!text && !file) return;
+
+      if (file) {
+        compressAndConvertToBase64(file, base64 => {
+          db.ref("messages").push({
+            uid: currentUser.uid,
+            text: text || null,
+            image: base64,
+            timestamp: firebase.database.ServerValue.TIMESTAMP
+          });
+        });
+      } else {
+        db.ref("messages").push({
+          uid: currentUser.uid,
+          text,
+          image: null,
+          timestamp: firebase.database.ServerValue.TIMESTAMP
+        });
+      }
+
+      document.getElementById("messageInput").value = "";
+      document.getElementById("imageInput").value = "";
+    }
+
+    function deleteMessage(key) {
+      db.ref("messages/" + key).remove();
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      document.querySelectorAll("#emojiList span").forEach(e => {
+        e.addEventListener("click", () => {
+          const input = document.getElementById("messageInput");
+          input.value += e.textContent;
+          input.focus();
+        });
+      });
+    });
+  </script>
+</body>
+</html>
