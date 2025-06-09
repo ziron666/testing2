@@ -25,7 +25,7 @@
     <input id="email" type="email" placeholder="Email"/>
     <input id="password" type="password" placeholder="Password"/>
     <button onclick="login()">Login</button>
-    <button onclick="register()">Register</button>
+    <!-- <button onclick="register()">Register</button> -->
   </div>
 
   <div id="chat">
@@ -59,18 +59,26 @@
     const db = firebase.database();
     let currentUser = null;
 
-    auth.onAuthStateChanged(user => {
-      if (user) {
-        currentUser = user;
-        document.getElementById("login").style.display = "none";
-        document.getElementById("chat").style.display = "flex";
-        listenMessages();
-      } else {
-        currentUser = null;
-        document.getElementById("login").style.display = "block";
-        document.getElementById("chat").style.display = "none";
-      }
-    });
+    const allowedUIDs = [
+  "vf7FnTInSxcK0YuyXjQLs9lkfpa2",
+  "mims0bnrQaMceoLXb6dW9DlEuf23"
+];
+
+auth.onAuthStateChanged(user => {
+  if (user && allowedUIDs.includes(user.uid)) {
+    currentUser = user;
+    document.getElementById("login").style.display = "none";
+    document.getElementById("chat").style.display = "flex";
+    listenMessages();
+  } else if (user) {
+    alert("Akun ini tidak diizinkan.");
+    auth.signOut();
+  } else {
+    currentUser = null;
+    document.getElementById("login").style.display = "block";
+    document.getElementById("chat").style.display = "none";
+  }
+});
 
     function login() {
       const email = document.getElementById("email").value;
