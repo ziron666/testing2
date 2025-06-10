@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Chat Room</title>
+  <title>Ever Lasting</title>
   <style>
     body { font-family: sans-serif; background: #f3f3f3; margin: 0; padding: 0; display: flex; flex-direction: column; height: 100vh; }
     #login, #chat { padding: 20px; margin: auto; width: 100%; max-width: 600px; }
@@ -21,7 +21,7 @@
 </head>
 <body>
   <div id="login">
-    <h2>Login Chat Room</h2>
+    <h2>Hei, Are You Okay?</h2>
     <input id="email" type="email" placeholder="Email"/>
     <input id="password" type="password" placeholder="Password"/>
     <button onclick="login()">Login</button>
@@ -63,6 +63,42 @@
   "vf7FnTInSxcK0YuyXjQLs9lkfpa2",
   "mims0bnrQaMceoLXb6dW9DlEuf23"
 ];
+    function showLastLogins() {
+  const infoDiv = document.createElement("div");
+  infoDiv.id = "lastLoginInfo";
+  infoDiv.style.fontSize = "14px";
+  infoDiv.style.color = "#555";
+  infoDiv.style.textAlign = "center";
+  infoDiv.style.marginBottom = "10px";
+
+  const uidMap = {
+    "vf7FnTInSxcK0YuyXjQLs9lkfpa2": "Maklampir",
+    "mims0bnrQaMceoLXb6dW9DlEuf23": "Grandong"
+  };
+
+  let content = "";
+
+  Promise.all(
+    Object.keys(uidMap).map(uid =>
+      db.ref("users/" + uid + "/lastLogin").once("value").then(snapshot => {
+        const time = snapshot.val();
+        const formatted = time
+          ? new Date(time).toLocaleString("id-ID", {
+              dateStyle: "short",
+              timeStyle: "short"
+            })
+          : "Belum login";
+        content += `<div>${uidMap[uid]}: ${formatted}</div>`;
+      })
+    )
+  ).then(() => {
+    infoDiv.innerHTML = content;
+    const chatBox = document.getElementById("chat");
+    const existing = document.getElementById("lastLoginInfo");
+    if (existing) existing.remove();
+    chatBox.prepend(infoDiv);
+  });
+}
 
 auth.onAuthStateChanged(user => {
   if (user && allowedUIDs.includes(user.uid)) {
@@ -78,6 +114,18 @@ auth.onAuthStateChanged(user => {
     document.getElementById("login").style.display = "block";
     document.getElementById("chat").style.display = "none";
   }
+  if (user && allowedUIDs.includes(user.uid)) {
+  currentUser = user;
+
+  const lastLoginTime = new Date().toISOString();
+  db.ref("users/" + user.uid).update({ lastLogin: lastLoginTime });
+
+  document.getElementById("login").style.display = "none";
+  document.getElementById("chat").style.display = "flex";
+
+  showLastLogins();
+  listenMessages();
+}
 });
 
     function login() {
