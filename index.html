@@ -113,12 +113,12 @@
       if (data.timestamp && now - data.timestamp > threeDays) {
         db.ref("messages/" + child.key).remove();
       }
-      function backToLogin() {
-  document.getElementById("logoutScreen").style.display = "none";
-  document.getElementById("login").style.display = "block";
-}
     });
   });
+}
+    function backToLogin() {
+  document.getElementById("logoutScreen").style.display = "none";
+  document.getElementById("login").style.display = "block";
 }
 
 auth.onAuthStateChanged(user => {
