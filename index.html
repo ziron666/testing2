@@ -38,6 +38,9 @@
     </div>
     <button onclick="logout()">Logout</button>
   </div>
+  <div id="missYou" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:#000000cc; color:white; display:flex; align-items:center; justify-content:center; font-size:2em; font-weight:bold; z-index:9999; opacity:0; transition:opacity 1.5s;">
+  i miss you
+</div>
   <div id="logoutScreen" style="display:none; text-align:center; margin:auto; padding:20px;">
   <h2>be careful and stay healthy</h2>
   <button onclick="backToLogin()">Login</button>
@@ -164,14 +167,24 @@ listenMessages();
 
     function logout() {
   auth.signOut().then(() => {
+    const missYou = document.getElementById("missYou");
+    missYou.style.display = "flex";
     setTimeout(() => {
+      missYou.style.opacity = "1";
+    }, 100); 
+
+    setTimeout(() => {
+      missYou.style.opacity = "0";
+    }, 2000);
+
+    setTimeout(() => {
+      missYou.style.display = "none";
       document.getElementById("login").style.display = "none";
       document.getElementById("chat").style.display = "none";
       document.getElementById("logoutScreen").style.display = "block";
-
-    document.getElementById("email").value = "";
+      document.getElementById("email").value = "";
       document.getElementById("password").value = "";
-    }, 200); 
+    }, 3500);
   });
 }
 
