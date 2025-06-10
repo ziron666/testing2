@@ -127,10 +127,16 @@
 auth.onAuthStateChanged(user => {
   if (user && allowedUIDs.includes(user.uid)) {
     currentUser = user;
+
+    const lastLoginTime = new Date().toISOString();
+    db.ref("users/" + user.uid).update({ lastLogin: lastLoginTime });
+
     document.getElementById("login").style.display = "none";
     document.getElementById("chat").style.display = "flex";
+
     deleteOldMessages();
-listenMessages();
+    listenMessages();
+    showLastLogins();
   } else if (user) {
     alert("Akun ini tidak diizinkan.");
     auth.signOut();
@@ -139,18 +145,6 @@ listenMessages();
     document.getElementById("login").style.display = "block";
     document.getElementById("chat").style.display = "none";
   }
-  if (user && allowedUIDs.includes(user.uid)) {
-  currentUser = user;
-
-  const lastLoginTime = new Date().toISOString();
-  db.ref("users/" + user.uid).update({ lastLogin: lastLoginTime });
-
-  document.getElementById("login").style.display = "none";
-  document.getElementById("chat").style.display = "flex";
-
-  showLastLogins();
-  listenMessages();
-}
 });
 
     function login() {
