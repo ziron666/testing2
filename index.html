@@ -38,6 +38,10 @@
     </div>
     <button onclick="logout()">Logout</button>
   </div>
+  <div id="logoutScreen" style="display:none; text-align:center; margin:auto; padding:20px;">
+  <h2>be careful and stay healthy</h2>
+  <button onclick="backToLogin()">Login</button>
+</div>
 
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
@@ -109,6 +113,10 @@
       if (data.timestamp && now - data.timestamp > threeDays) {
         db.ref("messages/" + child.key).remove();
       }
+      function backToLogin() {
+  document.getElementById("logoutScreen").style.display = "none";
+  document.getElementById("login").style.display = "block";
+}
     });
   });
 }
@@ -155,8 +163,15 @@ listenMessages();
     }
 
     function logout() {
-      auth.signOut();
-    }
+  auth.signOut().then(() => {
+    document.getElementById("login").style.display = "none";
+    document.getElementById("chat").style.display = "none";
+    document.getElementById("logoutScreen").style.display = "block";
+
+    document.getElementById("email").value = "";
+    document.getElementById("password").value = "";
+  });
+}
 
     function listenMessages() {
       db.ref("messages").off();
