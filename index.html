@@ -27,7 +27,6 @@
     <button onclick="login()">Login</button>
     <!-- <button onclick="register()">Register</button> -->
   </div>
-
   <div id="chat">
     <div id="messages"></div>
     <div id="emojiList">😊 😂 ❤️ 😍 🙏 😢 😎 🤔 🎉 😡</div>
@@ -262,5 +261,8 @@ auth.onAuthStateChanged(user => {
       });
     });
   </script>
+<div id="missYou" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:#000000cc; color:white; display:flex; align-items:center; justify-content:center; font-size:2em; font-weight:bold; z-index:9999;">
+  i miss you
+</div>
 </body>
 </html>
