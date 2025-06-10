@@ -99,13 +99,27 @@
     chatBox.prepend(infoDiv);
   });
 }
+    function deleteOldMessages() {
+  const now = Date.now();
+  const threeDays = 3 * 24 * 60 * 60 * 1000;
+
+  db.ref("messages").once("value").then(snapshot => {
+    snapshot.forEach(child => {
+      const data = child.val();
+      if (data.timestamp && now - data.timestamp > threeDays) {
+        db.ref("messages/" + child.key).remove();
+      }
+    });
+  });
+}
 
 auth.onAuthStateChanged(user => {
   if (user && allowedUIDs.includes(user.uid)) {
     currentUser = user;
     document.getElementById("login").style.display = "none";
     document.getElementById("chat").style.display = "flex";
-    listenMessages();
+    deleteOldMessages();
+listenMessages();
   } else if (user) {
     alert("Akun ini tidak diizinkan.");
     auth.signOut();
