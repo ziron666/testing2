@@ -164,12 +164,14 @@ listenMessages();
 
     function logout() {
   auth.signOut().then(() => {
-    document.getElementById("login").style.display = "none";
-    document.getElementById("chat").style.display = "none";
-    document.getElementById("logoutScreen").style.display = "block";
+    setTimeout(() => {
+      document.getElementById("login").style.display = "none";
+      document.getElementById("chat").style.display = "none";
+      document.getElementById("logoutScreen").style.display = "block";
 
     document.getElementById("email").value = "";
-    document.getElementById("password").value = "";
+      document.getElementById("password").value = "";
+    }, 200); 
   });
 }
 
