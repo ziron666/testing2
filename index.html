@@ -36,6 +36,7 @@
       <button onclick="sendMessage()">Kirim</button>
     </div>
     <button onclick="logout()">Logout</button>
+    <button onclick="clearChat()">Clear Chat</button>
   </div>
   <div id="logoutScreen" style="display:none; text-align:center; margin:auto; padding:20px;">
   <h2>be careful and stay healthy</h2>
@@ -114,6 +115,18 @@
       }
     });
   });
+}
+    function clearChat() {
+  const confirmed = confirm("Yakin ingin menghapus semua pesan?");
+  if (confirmed) {
+    db.ref("messages").remove()
+      .then(() => {
+        alert("Semua pesan berhasil dihapus.");
+      })
+      .catch(error => {
+        alert("Gagal menghapus pesan: " + error.message);
+      });
+  }
 }
     function backToLogin() {
   document.getElementById("logoutScreen").style.display = "none";
