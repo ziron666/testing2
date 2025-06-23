@@ -33,6 +33,7 @@
       <button id="recordBtn" onclick="toggleRecording()">🎤</button>
       <input id="messageInput" type="text" placeholder="Ketik pesan..."/>
       <input id="imageInput" type="file" accept="image/*"/>
+      <input id="videoInput" type="file" accept="video/*" />
       <button onclick="sendMessage()">Kirim</button>
     </div>
     <button onclick="logout()">Logout</button>
@@ -47,6 +48,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 
   <script>
     const firebaseConfig = {
@@ -63,6 +65,33 @@
     const auth = firebase.auth();
     const db = firebase.database();
     let currentUser = null;
+
+    const SUPABASE_URL = 'https://bumylvxhyxtburrzobxx.supabase.co';
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ1bXlsdnhoeXh0YnVycnpvYnh4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA2NjY3ODQsImV4cCI6MjA2NjI0Mjc4NH0.-flA0vjCQjOaOj-AvE1EGib7KBJJJqXNPeBRsbO5PAw';
+  const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  async function uploadVideo(file) {
+    const fileName = `${Date.now()}-${file.name}`;
+    const { data, error } = await supabase.storage
+      .from('ziron')
+      .upload(fileName, file, {
+        cacheControl: '3600',
+        upsert: false
+      });
+
+    if (error) {
+      console.error("Upload gagal:", error);
+      alert("Upload video gagal");
+      return null;
+    }
+
+    const { data: publicUrlData } = supabase
+      .storage
+      .from('ziron')
+      .getPublicUrl(fileName);
+
+    return publicUrlData.publicUrl;
+  }
 
     const allowedUIDs = [
       "vf7FnTInSxcK0YuyXjQLs9lkfpa2",
@@ -226,6 +255,7 @@
             <div>${data.text || ""}</div>
             ${data.image ? `<img src="${data.image}" />` : ""}
             ${data.audio ? `<audio controls src="${data.audio}" style="margin-top:5px;"></audio>` : ""}
+            ${data.video ? `<video controls style="max-width: 100%; margin-top:5px;" src="${data.video}"></video>` : ""}
             <div style="font-size: 12px; color: gray; margin-top: 4px;">${time}</div>
             ${data.uid === currentUser.uid ? `<div class="delete" onclick="deleteMessage('${child.key}')">🗑️</div>` : ""}
           `;
@@ -254,33 +284,43 @@
       reader.readAsDataURL(file);
     }
 
-    function sendMessage() {
-      const text = document.getElementById("messageInput").value;
-      const file = document.getElementById("imageInput").files[0];
-      if (!text && !file) return;
+    async function sendMessage() {
+  const text = document.getElementById("messageInput").value;
+  const imageFile = document.getElementById("imageInput").files[0];
+  const videoFile = document.getElementById("videoInput").files[0];
 
-      if (file) {
-        compressAndConvertToBase64(file, base64 => {
-          db.ref("messages").push({
-            uid: currentUser.uid,
-            text: text || null,
-            image: base64,
-            timestamp: firebase.database.ServerValue.TIMESTAMP
-          });
-        });
-      } else {
-        db.ref("messages").push({
-          uid: currentUser.uid,
-          text,
-          image: null,
-          timestamp: firebase.database.ServerValue.TIMESTAMP
-        });
-      }
+  if (!text && !imageFile && !videoFile) return;
 
-      document.getElementById("messageInput").value = "";
-      document.getElementById("imageInput").value = "";
-    }
+  let imageBase64 = null;
+  let videoUrl = null;
 
+  if (imageFile) {
+    await new Promise(resolve => {
+      compressAndConvertToBase64(imageFile, base64 => {
+        imageBase64 = base64;
+        resolve();
+      });
+    });
+  }
+
+  if (videoFile) {
+    videoUrl = await uploadVideo(videoFile);
+    if (!videoUrl) return; // gagal upload
+  }
+
+  db.ref("messages").push({
+    uid: currentUser.uid,
+    text: text || null,
+    image: imageBase64,
+    video: videoUrl,
+    timestamp: firebase.database.ServerValue.TIMESTAMP
+  });
+
+  document.getElementById("messageInput").value = "";
+  document.getElementById("imageInput").value = "";
+  document.getElementById("videoInput").value = "";
+}
+    
     function deleteMessage(key) {
       db.ref("messages/" + key).remove();
     }
