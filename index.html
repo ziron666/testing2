@@ -5,152 +5,57 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Ever Lasting</title>
   <style>
-    body {
-      font-family: sans-serif;
-      background: #f3f3f3;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-    }
-
-    #login, #chat {
-      padding: 20px;
-      margin: auto;
-      width: 100%;
-      max-width: 600px;
-    }
-
-    #chat {
-      flex-grow: 1;
-      display: none;
-      flex-direction: column;
-    }
-
-    #messages {
-      flex-grow: 1;
-      max-height: 70vh;
-      overflow-y: auto;
-      background: #fff;
-      padding: 10px;
-      margin-bottom: 10px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-    }
-
-    .message {
-      margin-bottom: 10px;
-      padding: 6px 10px;
-      background: #e0e0e0;
-      border-radius: 6px;
-      position: relative;
-    }
-
-    .message.you {
-      background: #d1ffd1;
-      text-align: right;
-    }
-
-    .message img {
-      max-width: 200px;
-      max-height: 200px;
-      display: block;
-      margin-top: 5px;
-      border-radius: 4px;
-    }
-
-    .message video {
-      max-width: 100%;
-      margin-top: 5px;
-      border-radius: 4px;
-    }
-
-    .message .delete {
-      position: absolute;
-      top: 4px;
-      right: 6px;
-      cursor: pointer;
-      color: red;
-      font-size: 12px;
-    }
-
-    input, button {
-      padding: 10px;
-      margin: 5px 0;
-      box-sizing: border-box;
-    }
-
-    #logoutScreen {
-      display: none;
-      text-align: center;
-      margin: auto;
-      padding: 20px;
-    }
-
-    #missYou {
-      display: none;
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: #000000cc;
-      color: white;
-      align-items: center;
-      justify-content: center;
-      font-size: 2em;
-      font-weight: bold;
-      z-index: 9999;
-    }
+    body { font-family: sans-serif; background: #f3f3f3; margin: 0; padding: 0; display: flex; flex-direction: column; height: 100vh; }
+    #login, #chat { padding: 20px; margin: auto; width: 100%; max-width: 600px; }
+    #chat { flex-grow: 1; display: none; flex-direction: column; }
+    #messages { flex-grow: 1; max-height: 70vh; overflow-y: auto; background: #fff; padding: 10px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #ccc; }
+    .message { margin-bottom: 10px; padding: 6px 10px; background: #e0e0e0; border-radius: 6px; position: relative; }
+    .message.you { background: #d1ffd1; text-align: right; }
+    .message img { max-width: 200px; max-height: 200px; display: block; margin-top: 5px; border-radius: 4px; }
+    .message video { max-width: 100%; margin-top: 5px; border-radius: 4px; }
+    .message .delete { position: absolute; top: 4px; right: 6px; cursor: pointer; color: red; font-size: 12px; }
+    input, button { padding: 10px; margin: 5px 0; width: 100%; box-sizing: border-box; }
+    #inputArea { display: flex; gap: 5px; flex-direction: column; }
+    #emojiList span { cursor: pointer; font-size: 20px; margin-right: 5px; }
   </style>
 </head>
-
 <body>
   <div id="login">
     <h2>Sayang.. 😘</h2>
-    <input id="email" type="email" placeholder="Email" />
-    <input id="password" type="password" placeholder="Password" />
+    <input id="email" type="email" placeholder="Email"/>
+    <input id="password" type="password" placeholder="Password"/>
     <button onclick="login()">Login</button>
   </div>
 
   <div id="chat">
     <div id="messages"></div>
-
-    <!-- Input Pesan -->
-    <div style="display: flex; align-items: center; gap: 5px; margin-top: 10px;">
-      <input id="messageInput" type="text" placeholder="Ketik pesan..." style="flex-grow: 1; padding: 10px; border-radius: 6px;" />
-      <button onclick="sendMessage()" style="padding: 10px; min-width: 44px;">📨</button>
+    <div id="emojiList">😊 😂 ❤️ 😍 🙏 😢 😎 🤔 🎉 😡</div>
+    <div id="inputArea">
+      <button id="recordBtn" onclick="toggleRecording()">🎤</button>
+      <input id="messageInput" type="text" placeholder="Ketik pesan..."/>
+      <input id="imageInput" type="file" accept="image/*"/>
+      <input id="videoInput" type="file" accept="video/*" />
+      <button onclick="sendMessage()">Kirim</button>
     </div>
-
-    <!-- Tombol Bar -->
-    <div style="display: flex; justify-content: space-between; gap: 5px; margin-top: 8px;">
-      <label style="flex: 1;">
-        <input id="videoInput" type="file" accept="video/*" style="display: none;" onchange="sendMessage()" />
-        <button onclick="document.getElementById('videoInput').click()" style="width: 100%;">🎥</button>
-      </label>
-      <label style="flex: 1;">
-        <input id="imageInput" type="file" accept="image/*" style="display: none;" onchange="sendMessage()" />
-        <button onclick="document.getElementById('imageInput').click()" style="width: 100%;">📷</button>
-      </label>
-      <button onclick="toggleRecording()" style="flex: 1;" id="recordBtn">🎤</button>
-      <button onclick="clearChat()" style="flex: 1; color: red;">❌</button>
-      <button onclick="logout()" style="flex: 1;">🚪</button>
-    </div>
+    <button onclick="logout()">Logout</button>
+    <button onclick="clearChat()">Clear Chat</button>
   </div>
 
-  <!-- Logout screen harus berada di luar #chat -->
-  <div id="logoutScreen">
-    <h2>Sehat terus ya, I Love You..</h2>
+  <div id="logoutScreen" style="display:none; text-align:center; margin:auto; padding:20px;">
+    <h2>Sehat terus ya sayang, I love You..</h2>
     <button onclick="backToLogin()">Login</button>
   </div>
 
-  <div id="missYou">I Miss You</div>
-
-  <!-- Firebase & Supabase -->
+  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+
+  <!-- Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 
   <script>
+    // Firebase Config
     const firebaseConfig = {
       apiKey: "AIzaSyDMfDeZ05dkixybwZ2Z_2FWU8nc6RtQ8P8",
       authDomain: "test123-40d1b.firebaseapp.com",
@@ -165,10 +70,30 @@
     const db = firebase.database();
     let currentUser = null;
 
+    // Supabase Setup
     const SUPABASE_URL = 'https://bumylvxhyxtburrzobxx.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ1bXlsdnhoeXh0YnVycnpvYnh4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA2NjY3ODQsImV4cCI6MjA2NjI0Mjc4NH0.-flA0vjCQjOaOj-AvE1EGib7KBJJJqXNPeBRsbO5PAw';
     const { createClient } = supabase;
     const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    async function uploadVideo(file) {
+      const fileName = `${Date.now()}-${file.name}`;
+      const { data, error } = await supabaseClient.storage
+        .from('ziron')
+        .upload(fileName, file, { cacheControl: '3600', upsert: false });
+
+      if (error) {
+        console.error("Upload gagal:", error);
+        alert("Upload video gagal");
+        return null;
+      }
+
+      const { data: publicUrlData } = supabaseClient.storage
+        .from('ziron')
+        .getPublicUrl(fileName);
+
+      return publicUrlData.publicUrl;
+    }
 
     const allowedUIDs = [
       "vf7FnTInSxcK0YuyXjQLs9lkfpa2",
@@ -183,10 +108,10 @@
     auth.onAuthStateChanged(user => {
       if (user && allowedUIDs.includes(user.uid)) {
         currentUser = user;
-        db.ref("users/" + user.uid).update({ lastLogin: new Date().toISOString() });
+        const lastLoginTime = new Date().toISOString();
+        db.ref("users/" + user.uid).update({ lastLogin: lastLoginTime });
         document.getElementById("login").style.display = "none";
         document.getElementById("chat").style.display = "flex";
-        document.getElementById("logoutScreen").style.display = "none";
         deleteOldMessages();
         listenMessages();
       } else {
@@ -194,7 +119,6 @@
         currentUser = null;
         document.getElementById("login").style.display = "block";
         document.getElementById("chat").style.display = "none";
-        document.getElementById("logoutScreen").style.display = "none";
       }
     });
 
@@ -272,6 +196,30 @@
       }
     }
 
+    function listenMessages() {
+      db.ref("messages").off();
+      db.ref("messages").on("value", snapshot => {
+        const messagesDiv = document.getElementById("messages");
+        messagesDiv.innerHTML = "";
+        snapshot.forEach(child => {
+          const data = child.val();
+          const msg = document.createElement("div");
+          msg.className = "message" + (data.uid === currentUser.uid ? " you" : "");
+          const time = data.timestamp ? new Date(data.timestamp).toLocaleTimeString("id-ID", { hour: '2-digit', minute: '2-digit' }) : '';
+          msg.innerHTML = `
+            <div>${data.text || ""}</div>
+            ${data.image ? `<img src="${data.image}" />` : ""}
+            ${data.audio ? `<audio controls src="${data.audio}" style="margin-top:5px;"></audio>` : ""}
+            ${data.video ? `<video controls src="${data.video}"></video>` : ""}
+            <div style="font-size: 12px; color: gray; margin-top: 4px;">${time}</div>
+            ${data.uid === currentUser.uid ? `<div class="delete" onclick="deleteMessage('${child.key}')">🗑️</div>` : ""}
+          `;
+          messagesDiv.appendChild(msg);
+        });
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      });
+    }
+
     function compressAndConvertToBase64(file, callback) {
       const reader = new FileReader();
       reader.onload = event => {
@@ -289,25 +237,6 @@
         img.src = event.target.result;
       };
       reader.readAsDataURL(file);
-    }
-
-    async function uploadVideo(file) {
-      const fileName = `${Date.now()}-${file.name}`;
-      const { data, error } = await supabaseClient.storage
-        .from('ziron')
-        .upload(fileName, file, { cacheControl: '3600', upsert: false });
-
-      if (error) {
-        alert("Upload video gagal");
-        console.error(error);
-        return null;
-      }
-
-      const { data: publicUrlData } = supabaseClient.storage
-        .from('ziron')
-        .getPublicUrl(fileName);
-
-      return publicUrlData.publicUrl;
     }
 
     async function sendMessage() {
@@ -351,29 +280,19 @@
       db.ref("messages/" + key).remove();
     }
 
-    function listenMessages() {
-      db.ref("messages").off();
-      db.ref("messages").on("value", snapshot => {
-        const messagesDiv = document.getElementById("messages");
-        messagesDiv.innerHTML = "";
-        snapshot.forEach(child => {
-          const data = child.val();
-          const msg = document.createElement("div");
-          msg.className = "message" + (data.uid === currentUser.uid ? " you" : "");
-          const time = data.timestamp ? new Date(data.timestamp).toLocaleTimeString("id-ID", { hour: '2-digit', minute: '2-digit' }) : '';
-          msg.innerHTML = `
-            <div>${data.text || ""}</div>
-            ${data.image ? `<img src="${data.image}" />` : ""}
-            ${data.audio ? `<audio controls src="${data.audio}" style="margin-top:5px;"></audio>` : ""}
-            ${data.video ? `<video controls src="${data.video}"></video>` : ""}
-            <div style="font-size: 12px; color: gray; margin-top: 4px;">${time}</div>
-            ${data.uid === currentUser.uid ? `<div class="delete" onclick="deleteMessage('${child.key}')">🗑️</div>` : ""}
-          `;
-          messagesDiv.appendChild(msg);
+    document.addEventListener("DOMContentLoaded", () => {
+      document.querySelectorAll("#emojiList span").forEach(e => {
+        e.addEventListener("click", () => {
+          const input = document.getElementById("messageInput");
+          input.value += e.textContent;
+          input.focus();
         });
-        messagesDiv.scrollTop = messagesDiv.scrollHeight;
       });
-    }
+    });
   </script>
+
+  <div id="missYou" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:#000000cc; color:white; align-items:center; justify-content:center; font-size:2em; font-weight:bold; z-index:9999;">
+    i miss you
+  </div>
 </body>
 </html>
