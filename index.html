@@ -38,6 +38,10 @@
     </div>
     <button onclick="logout()">Logout</button>
     <button onclick="clearChat()">Clear Chat</button>
+    <button onclick="startCall()">Panggil</button>
+    <button onclick="endCall()">Akhiri Panggilan</button>
+
+<audio id="remoteAudio" autoplay></audio>
   </div>
   <div id="logoutScreen" style="display:none; text-align:center; margin:auto; padding:20px;">
   <h2>be careful and stay healthy</h2>
@@ -63,6 +67,105 @@
     const auth = firebase.auth();
     const db = firebase.database();
     let currentUser = null;
+
+    let localConnection;
+let remoteStream;
+let isCalling = false;
+
+async function startCall() {
+  if (!currentUser) return;
+
+  isCalling = true;
+
+  const servers = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
+  localConnection = new RTCPeerConnection(servers);
+
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  stream.getTracks().forEach(track => localConnection.addTrack(track, stream));
+
+  localConnection.onicecandidate = e => {
+    if (e.candidate) {
+      db.ref("calls/" + getOtherUID()).push({ type: "candidate", candidate: e.candidate });
+    }
+  };
+
+  localConnection.ontrack = e => {
+    const audio = document.getElementById("remoteAudio");
+    if (!remoteStream) {
+      remoteStream = new MediaStream();
+      audio.srcObject = remoteStream;
+    }
+    remoteStream.addTrack(e.track);
+  };
+
+  const offer = await localConnection.createOffer();
+  await localConnection.setLocalDescription(offer);
+
+  db.ref("calls/" + getOtherUID()).push({ type: "offer", offer: offer });
+}
+
+function getOtherUID() {
+  return allowedUIDs.find(uid => uid !== currentUser.uid);
+}
+
+db.ref("calls/" + (auth.currentUser ? auth.currentUser.uid : "")).on("child_added", async snapshot => {
+  const data = snapshot.val();
+  if (!data) return;
+
+  if (data.type === "offer") {
+    const servers = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
+    localConnection = new RTCPeerConnection(servers);
+
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    stream.getTracks().forEach(track => localConnection.addTrack(track, stream));
+
+    localConnection.onicecandidate = e => {
+      if (e.candidate) {
+        db.ref("calls/" + getOtherUID()).push({ type: "candidate", candidate: e.candidate });
+        
+        function endCall() {
+  if (localConnection) {
+    localConnection.close();
+    localConnection = null;
+    isCalling = false;
+  }
+  if (remoteStream) {
+    remoteStream.getTracks().forEach(track => track.stop());
+    remoteStream = null;
+  }
+  document.getElementById("remoteAudio").srcObject = null;
+  db.ref("calls/" + currentUser.uid).remove();
+}
+      }
+    };
+
+    localConnection.ontrack = e => {
+      const audio = document.getElementById("remoteAudio");
+      if (!remoteStream) {
+        remoteStream = new MediaStream();
+        audio.srcObject = remoteStream;
+      }
+      remoteStream.addTrack(e.track);
+    };
+
+    await localConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
+    const answer = await localConnection.createAnswer();
+    await localConnection.setLocalDescription(answer);
+    db.ref("calls/" + getOtherUID()).push({ type: "answer", answer: answer });
+  }
+
+  if (data.type === "answer") {
+    await localConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
+  }
+
+  if (data.type === "candidate" && data.candidate) {
+    try {
+      await localConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
+    } catch (err) {
+      console.error("ICE candidate error:", err);
+    }
+  }
+});
 
     let mediaRecorder;
 let audioChunks = [];
