@@ -19,31 +19,48 @@
     #emojiList span { cursor: pointer; font-size: 20px; margin-right: 5px; }
   </style>
 </head>
+
 <body>
   <div id="login">
-    <h2>Hei, Are You Okay?</h2>
-    <input id="email" type="email" placeholder="Email"/>
-    <input id="password" type="password" placeholder="Password"/>
+    <h2>Sayang.. 😘</h2>
+    <input id="email" type="email" placeholder="Email" />
+    <input id="password" type="password" placeholder="Password" />
     <button onclick="login()">Login</button>
   </div>
 
   <div id="chat">
     <div id="messages"></div>
-    <div id="emojiList">😊 😂 ❤️ 😍 🙏 😢 😎 🤔 🎉 😡</div>
-    <div id="inputArea">
-      <button id="recordBtn" onclick="toggleRecording()">🎤</button>
-      <input id="messageInput" type="text" placeholder="Ketik pesan..."/>
-      <input id="imageInput" type="file" accept="image/*"/>
-      <input id="videoInput" type="file" accept="video/*" />
-      <button onclick="sendMessage()">Kirim</button>
+
+    <!-- Input Pesan -->
+    <div style="display: flex; align-items: center; gap: 5px;">
+      <input id="messageInput" type="text" placeholder="Ketik pesan..." style="flex: 1;" />
+      <button onclick="sendMessage()" style="padding: 10px;">📨</button>
     </div>
-    <button onclick="logout()">Logout</button>
-    <button onclick="clearChat()">Clear Chat</button>
+
+    <!-- Tombol Bar -->
+    <div style="display: flex; justify-content: space-between; margin-top: 8px;">
+      <label style="flex:1;">
+        <input id="videoInput" type="file" accept="video/*" style="display:none" onchange="sendMessage()" />
+        <button onclick="document.getElementById('videoInput').click()" style="width:100%;">🎥</button>
+      </label>
+      <label style="flex:1;">
+        <input id="imageInput" type="file" accept="image/*" style="display:none" onchange="sendMessage()" />
+        <button onclick="document.getElementById('imageInput').click()" style="width:100%;">📷</button>
+      </label>
+      <button onclick="toggleRecording()" style="flex:1;">🎤</button>
+      <button onclick="clearChat()" style="flex:1; color: red;">❌</button>
+      <button onclick="logout()" style="flex:1;">🚪</button>
+    </div>
   </div>
 
   <div id="logoutScreen" style="display:none; text-align:center; margin:auto; padding:20px;">
-    <h2>be careful and stay healthy</h2>
+    <h2>Sehat terus ya, I Love You..</h2>
     <button onclick="backToLogin()">Login</button>
+  </div>
+
+  <!-- Optional: animasi suara -->
+  <div id="missYou" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:#000000cc; color:white; align-items:center; justify-content:center; font-size:2em; font-weight:bold; z-index:9999;">
+    I Miss You
   </div>
 
   <!-- Firebase -->
