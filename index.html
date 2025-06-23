@@ -166,21 +166,23 @@
 }
 
     auth.onAuthStateChanged(user => {
-      if (user && allowedUIDs.includes(user.uid)) {
-        currentUser = user;
-        const lastLoginTime = new Date().toISOString();
-        db.ref("users/" + user.uid).update({ lastLogin: lastLoginTime });
-        document.getElementById("login").style.display = "none";
-        document.getElementById("chat").style.display = "flex";
-        deleteOldMessages();
-        listenMessages();
-      } else {
-        auth.signOut();
-        currentUser = null;
-        document.getElementById("login").style.display = "block";
-        document.getElementById("chat").style.display = "none";
-      }
-    });
+  if (user && allowedUIDs.includes(user.uid)) {
+    currentUser = user;
+    const lastLoginTime = new Date().toISOString();
+    db.ref("users/" + user.uid).update({ lastLogin: lastLoginTime });
+    document.getElementById("login").style.display = "none";
+    document.getElementById("chat").style.display = "flex";
+    document.getElementById("logoutScreen").style.display = "none";
+    deleteOldMessages();
+    listenMessages();
+  } else {
+    // Jangan panggil auth.signOut() lagi
+    currentUser = null;
+    document.getElementById("chat").style.display = "none";
+    document.getElementById("logoutScreen").style.display = "none";
+    document.getElementById("login").style.display = "block";
+  }
+});
 
     function login() {
       const email = document.getElementById("email").value;
