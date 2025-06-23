@@ -12,6 +12,7 @@
     .message { margin-bottom: 10px; padding: 6px 10px; background: #e0e0e0; border-radius: 6px; position: relative; }
     .message.you { background: #d1ffd1; text-align: right; }
     .message img { max-width: 200px; max-height: 200px; display: block; margin-top: 5px; border-radius: 4px; }
+    .message video { max-width: 100%; margin-top: 5px; border-radius: 4px; }
     .message .delete { position: absolute; top: 4px; right: 6px; cursor: pointer; color: red; font-size: 12px; }
     input, button { padding: 10px; margin: 5px 0; width: 100%; box-sizing: border-box; }
     #inputArea { display: flex; gap: 5px; flex-direction: column; }
@@ -45,12 +46,16 @@
     <button onclick="backToLogin()">Login</button>
   </div>
 
+  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+
+  <!-- Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 
   <script>
+    // Firebase Config
     const firebaseConfig = {
       apiKey: "AIzaSyDMfDeZ05dkixybwZ2Z_2FWU8nc6RtQ8P8",
       authDomain: "test123-40d1b.firebaseapp.com",
@@ -60,38 +65,35 @@
       messagingSenderId: "842326097074",
       appId: "1:842326097074:web:cd13a5f1bb3b69477dddab"
     };
-
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.database();
     let currentUser = null;
 
+    // Supabase Setup
     const SUPABASE_URL = 'https://bumylvxhyxtburrzobxx.supabase.co';
-  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ1bXlsdnhoeXh0YnVycnpvYnh4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA2NjY3ODQsImV4cCI6MjA2NjI0Mjc4NH0.-flA0vjCQjOaOj-AvE1EGib7KBJJJqXNPeBRsbO5PAw';
-  const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ1bXlsdnhoeXh0YnVycnpvYnh4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA2NjY3ODQsImV4cCI6MjA2NjI0Mjc4NH0.-flA0vjCQjOaOj-AvE1EGib7KBJJJqXNPeBRsbO5PAw';
+    const { createClient } = supabase;
+    const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  async function uploadVideo(file) {
-    const fileName = `${Date.now()}-${file.name}`;
-    const { data, error } = await supabase.storage
-      .from('ziron')
-      .upload(fileName, file, {
-        cacheControl: '3600',
-        upsert: false
-      });
+    async function uploadVideo(file) {
+      const fileName = `${Date.now()}-${file.name}`;
+      const { data, error } = await supabaseClient.storage
+        .from('ziron')
+        .upload(fileName, file, { cacheControl: '3600', upsert: false });
 
-    if (error) {
-      console.error("Upload gagal:", error);
-      alert("Upload video gagal");
-      return null;
+      if (error) {
+        console.error("Upload gagal:", error);
+        alert("Upload video gagal");
+        return null;
+      }
+
+      const { data: publicUrlData } = supabaseClient.storage
+        .from('ziron')
+        .getPublicUrl(fileName);
+
+      return publicUrlData.publicUrl;
     }
-
-    const { data: publicUrlData } = supabase
-      .storage
-      .from('ziron')
-      .getPublicUrl(fileName);
-
-    return publicUrlData.publicUrl;
-  }
 
     const allowedUIDs = [
       "vf7FnTInSxcK0YuyXjQLs9lkfpa2",
@@ -112,11 +114,8 @@
         document.getElementById("chat").style.display = "flex";
         deleteOldMessages();
         listenMessages();
-        showLastLogins();
-      } else if (user) {
-        alert("Akun ini tidak diizinkan.");
-        auth.signOut();
       } else {
+        auth.signOut();
         currentUser = null;
         document.getElementById("login").style.display = "block";
         document.getElementById("chat").style.display = "none";
@@ -126,58 +125,24 @@
     function login() {
       const email = document.getElementById("email").value;
       const password = document.getElementById("password").value;
-      auth.signInWithEmailAndPassword(email, password).catch(error => alert(error.message));
+      auth.signInWithEmailAndPassword(email, password)
+        .catch(error => alert(error.message));
     }
 
     function logout() {
       auth.signOut().then(() => {
-        const missYou = document.getElementById("missYou");
-        missYou.style.display = "flex";
-        setTimeout(() => { missYou.style.opacity = "1"; }, 100);
-        setTimeout(() => { missYou.style.opacity = "0"; }, 2000);
-        setTimeout(() => {
-          missYou.style.display = "none";
-          document.getElementById("login").style.display = "none";
-          document.getElementById("chat").style.display = "none";
-          document.getElementById("logoutScreen").style.display = "block";
-          document.getElementById("email").value = "";
-          document.getElementById("password").value = "";
-        }, 3500);
+        document.getElementById("login").style.display = "none";
+        document.getElementById("chat").style.display = "none";
+        document.getElementById("logoutScreen").style.display = "block";
+        document.getElementById("email").value = "";
+        document.getElementById("password").value = "";
       });
     }
 
-    function showLastLogins() {
-      const infoDiv = document.createElement("div");
-      infoDiv.id = "lastLoginInfo";
-      infoDiv.style.fontSize = "14px";
-      infoDiv.style.color = "#555";
-      infoDiv.style.textAlign = "center";
-      infoDiv.style.marginBottom = "10px";
-
-      const uidMap = {
-        "vf7FnTInSxcK0YuyXjQLs9lkfpa2": "Maklampir",
-        "mims0bnrQaMceoLXb6dW9DlEuf23": "Grandong"
-      };
-
-      let content = "";
-
-      Promise.all(
-        Object.keys(uidMap).map(uid =>
-          db.ref("users/" + uid + "/lastLogin").once("value").then(snapshot => {
-            const time = snapshot.val();
-            const formatted = time
-              ? new Date(time).toLocaleString("id-ID", { dateStyle: "short", timeStyle: "short" })
-              : "Belum login";
-            content += `<div>${uidMap[uid]}: ${formatted}</div>`;
-          })
-        )
-      ).then(() => {
-        infoDiv.innerHTML = content;
-        const chatBox = document.getElementById("chat");
-        const existing = document.getElementById("lastLoginInfo");
-        if (existing) existing.remove();
-        chatBox.prepend(infoDiv);
-      });
+    function clearChat() {
+      if (confirm("Yakin ingin menghapus semua pesan?")) {
+        db.ref("messages").remove();
+      }
     }
 
     function deleteOldMessages() {
@@ -185,20 +150,11 @@
       const threeDays = 3 * 24 * 60 * 60 * 1000;
       db.ref("messages").once("value").then(snapshot => {
         snapshot.forEach(child => {
-          const data = child.val();
-          if (data.timestamp && now - data.timestamp > threeDays) {
+          if (child.val().timestamp && now - child.val().timestamp > threeDays) {
             db.ref("messages/" + child.key).remove();
           }
         });
       });
-    }
-
-    function clearChat() {
-      const confirmed = confirm("Yakin ingin menghapus semua pesan?");
-      if (confirmed) {
-        db.ref("messages").remove().then(() => alert("Semua pesan berhasil dihapus."))
-          .catch(error => alert("Gagal menghapus pesan: " + error.message));
-      }
     }
 
     let mediaRecorder;
@@ -224,12 +180,11 @@
             const blob = new Blob(audioChunks, { type: "audio/webm" });
             const reader = new FileReader();
             reader.onloadend = () => {
-              const base64Audio = reader.result;
               db.ref("messages").push({
                 uid: currentUser.uid,
                 text: null,
                 image: null,
-                audio: base64Audio,
+                audio: reader.result,
                 timestamp: firebase.database.ServerValue.TIMESTAMP
               });
             };
@@ -255,7 +210,7 @@
             <div>${data.text || ""}</div>
             ${data.image ? `<img src="${data.image}" />` : ""}
             ${data.audio ? `<audio controls src="${data.audio}" style="margin-top:5px;"></audio>` : ""}
-            ${data.video ? `<video controls style="max-width: 100%; margin-top:5px;" src="${data.video}"></video>` : ""}
+            ${data.video ? `<video controls src="${data.video}"></video>` : ""}
             <div style="font-size: 12px; color: gray; margin-top: 4px;">${time}</div>
             ${data.uid === currentUser.uid ? `<div class="delete" onclick="deleteMessage('${child.key}')">🗑️</div>` : ""}
           `;
@@ -285,42 +240,42 @@
     }
 
     async function sendMessage() {
-  const text = document.getElementById("messageInput").value;
-  const imageFile = document.getElementById("imageInput").files[0];
-  const videoFile = document.getElementById("videoInput").files[0];
+      const text = document.getElementById("messageInput").value;
+      const imageFile = document.getElementById("imageInput").files[0];
+      const videoFile = document.getElementById("videoInput").files[0];
 
-  if (!text && !imageFile && !videoFile) return;
+      if (!text && !imageFile && !videoFile) return;
 
-  let imageBase64 = null;
-  let videoUrl = null;
+      let imageBase64 = null;
+      let videoUrl = null;
 
-  if (imageFile) {
-    await new Promise(resolve => {
-      compressAndConvertToBase64(imageFile, base64 => {
-        imageBase64 = base64;
-        resolve();
+      if (imageFile) {
+        await new Promise(resolve => {
+          compressAndConvertToBase64(imageFile, base64 => {
+            imageBase64 = base64;
+            resolve();
+          });
+        });
+      }
+
+      if (videoFile) {
+        videoUrl = await uploadVideo(videoFile);
+        if (!videoUrl) return;
+      }
+
+      db.ref("messages").push({
+        uid: currentUser.uid,
+        text: text || null,
+        image: imageBase64,
+        video: videoUrl,
+        timestamp: firebase.database.ServerValue.TIMESTAMP
       });
-    });
-  }
 
-  if (videoFile) {
-    videoUrl = await uploadVideo(videoFile);
-    if (!videoUrl) return; // gagal upload
-  }
+      document.getElementById("messageInput").value = "";
+      document.getElementById("imageInput").value = "";
+      document.getElementById("videoInput").value = "";
+    }
 
-  db.ref("messages").push({
-    uid: currentUser.uid,
-    text: text || null,
-    image: imageBase64,
-    video: videoUrl,
-    timestamp: firebase.database.ServerValue.TIMESTAMP
-  });
-
-  document.getElementById("messageInput").value = "";
-  document.getElementById("imageInput").value = "";
-  document.getElementById("videoInput").value = "";
-}
-    
     function deleteMessage(key) {
       db.ref("messages/" + key).remove();
     }
