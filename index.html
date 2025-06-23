@@ -31,6 +31,7 @@
     <div id="messages"></div>
     <div id="emojiList">😊 😂 ❤️ 😍 🙏 😢 😎 🤔 🎉 😡</div>
     <div id="inputArea">
+      <button id="recordBtn" onclick="toggleRecording()">🎤</button>
       <input id="messageInput" type="text" placeholder="Ketik pesan..."/>
       <input id="imageInput" type="file" accept="image/*"/>
       <button onclick="sendMessage()">Kirim</button>
@@ -62,6 +63,60 @@
     const auth = firebase.auth();
     const db = firebase.database();
     let currentUser = null;
+
+    let mediaRecorder;
+let audioChunks = [];
+let isRecording = false;
+
+function toggleRecording() {
+  if (isRecording) {
+    stopRecording();
+  } else {
+    startRecording();
+  }
+}
+
+function startRecording() {
+  navigator.mediaDevices.getUserMedia({ audio: true })
+    .then(stream => {
+      mediaRecorder = new MediaRecorder(stream);
+      mediaRecorder.start();
+      isRecording = true;
+      document.getElementById("recordBtn").textContent = "⏹️";
+
+      audioChunks = [];
+      mediaRecorder.ondataavailable = e => {
+        if (e.data.size > 0) audioChunks.push(e.data);
+      };
+
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(audioChunks, { type: "audio/webm" });
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const base64Audio = reader.result;
+          db.ref("messages").push({
+            uid: currentUser.uid,
+            text: null,
+            image: null,
+            audio: base64Audio,
+            timestamp: firebase.database.ServerValue.TIMESTAMP
+          });
+        };
+        reader.readAsDataURL(blob);
+        isRecording = false;
+        document.getElementById("recordBtn").textContent = "🎤";
+      };
+    })
+    .catch(err => {
+      alert("Gagal merekam suara: " + err.message);
+    });
+}
+
+function stopRecording() {
+  if (mediaRecorder && isRecording) {
+    mediaRecorder.stop();
+  }
+}
 
     const allowedUIDs = [
   "vf7FnTInSxcK0YuyXjQLs9lkfpa2",
@@ -207,6 +262,7 @@ auth.onAuthStateChanged(user => {
 msg.innerHTML = `
   <div>${data.text || ""}</div>
   ${data.image ? `<img src="${data.image}" />` : ""}
+  ${data.audio ? `<audio controls src="${data.audio}" style="margin-top:5px;"></audio>` : ""}
   <div style="font-size: 12px; color: gray; margin-top: 4px;">${time}</div>
   ${data.uid === currentUser.uid ? `<div class="delete" onclick="deleteMessage('${child.key}')">🗑️</div>` : ""}
 `;
