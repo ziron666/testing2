@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Ever Lasting</title>
   <style>
+    html, body {
+      height: 100%;
+    }
     body { font-family: sans-serif; background: #f3f3f3; margin: 0; padding: 0; display: flex; flex-direction: column; height: 100vh; }
     #login, #chat { padding: 20px; margin: auto; width: 100%; max-width: 600px; }
     #chat { flex-grow: 1; display: none; flex-direction: column; }
@@ -47,6 +50,23 @@
 }
 
     #emojiList span { cursor: pointer; font-size: 20px; margin-right: 5px; }
+    #logoutScreen {
+  display: none;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #ffffff;
+  color: #333333;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 20px;
+  z-index: 9999;
+}
   </style>
 </head>
 <body>
