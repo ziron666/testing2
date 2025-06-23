@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -15,7 +14,7 @@
     .message img { max-width: 200px; max-height: 200px; display: block; margin-top: 5px; border-radius: 4px; }
     .message .delete { position: absolute; top: 4px; right: 6px; cursor: pointer; color: red; font-size: 12px; }
     input, button { padding: 10px; margin: 5px 0; width: 100%; box-sizing: border-box; }
-    #inputArea { display: flex; gap: 5px; }
+    #inputArea { display: flex; gap: 5px; flex-direction: column; }
     #emojiList span { cursor: pointer; font-size: 20px; margin-right: 5px; }
   </style>
 </head>
@@ -25,12 +24,12 @@
     <input id="email" type="email" placeholder="Email"/>
     <input id="password" type="password" placeholder="Password"/>
     <button onclick="login()">Login</button>
-    <!-- <button onclick="register()">Register</button> -->
   </div>
+
   <div id="chat">
     <div id="messages"></div>
     <div id="emojiList">😊 😂 ❤️ 😍 🙏 😢 😎 🤔 🎉 😡</div>
-    <div id="inputArea" style="flex-direction: column;">
+    <div id="inputArea">
       <button id="recordBtn" onclick="toggleRecording()">🎤</button>
       <input id="messageInput" type="text" placeholder="Ketik pesan..."/>
       <input id="imageInput" type="file" accept="image/*"/>
@@ -38,15 +37,12 @@
     </div>
     <button onclick="logout()">Logout</button>
     <button onclick="clearChat()">Clear Chat</button>
-    <button onclick="startCall()">Panggil</button>
-    <button onclick="endCall()">Akhiri Panggilan</button>
-
-<audio id="remoteAudio" autoplay></audio>
   </div>
+
   <div id="logoutScreen" style="display:none; text-align:center; margin:auto; padding:20px;">
-  <h2>be careful and stay healthy</h2>
-  <button onclick="backToLogin()">Login</button>
-</div>
+    <h2>be careful and stay healthy</h2>
+    <button onclick="backToLogin()">Login</button>
+  </div>
 
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
@@ -68,321 +64,153 @@
     const db = firebase.database();
     let currentUser = null;
 
-    let localConnection;
-let remoteStream;
-let isCalling = false;
-
-async function startCall() {
-  console.log("▶️ startCall() dipanggil");
-
-  if (!currentUser) {
-    alert("Belum login");
-    return;
-  }
-
-  const otherUID = getOtherUID();
-  if (!otherUID) {
-    alert("Tidak ada user lain yang aktif");
-    return;
-  }
-
-  console.log("Memanggil UID:", otherUID);
-
-  document.getElementById("messages").innerHTML +=
-  `<div style="text-align:center; color:blue; font-weight:bold;">📞 Sedang memanggil...</div>`;
-
-  isCalling = true;
-
-  const servers = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
-  localConnection = new RTCPeerConnection(servers);
-
-  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-  stream.getTracks().forEach(track => localConnection.addTrack(track, stream));
-
-  localConnection.onicecandidate = e => {
-    if (e.candidate) {
-      db.ref("calls/" + getOtherUID()).push({ type: "candidate", candidate: e.candidate });
-    }
-  };
-
-  localConnection.ontrack = e => {
-    const audio = document.getElementById("remoteAudio");
-    if (!remoteStream) {
-      remoteStream = new MediaStream();
-      audio.srcObject = remoteStream;
-    }
-    remoteStream.addTrack(e.track);
-  };
-
-  const offer = await localConnection.createOffer();
-  await localConnection.setLocalDescription(offer);
-
-  db.ref("calls/" + getOtherUID()).push({ type: "offer", offer: offer });
-}
-
-function getOtherUID() {
-  return allowedUIDs.find(uid => uid !== currentUser.uid);
-}
-
-db.ref("calls/" + (auth.currentUser ? auth.currentUser.uid : "")).on("child_added", async snapshot => {
-  const data = snapshot.val();
-  if (!data) return;
-
-  if (data.type === "offer") {
-    const servers = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
-    localConnection = new RTCPeerConnection(servers);
-
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    stream.getTracks().forEach(track => localConnection.addTrack(track, stream));
-
-    localConnection.onicecandidate = e => {
-      if (e.candidate) {
-        db.ref("calls/" + getOtherUID()).push({ type: "candidate", candidate: e.candidate });
-        
-        function endCall() {
-  if (localConnection) {
-    localConnection.close();
-    localConnection = null;
-    isCalling = false;
-  }
-  if (remoteStream) {
-    remoteStream.getTracks().forEach(track => track.stop());
-    remoteStream = null;
-  }
-  document.getElementById("remoteAudio").srcObject = null;
-  db.ref("calls/" + currentUser.uid).remove();
-}
-      }
-    };
-
-    localConnection.ontrack = e => {
-      const audio = document.getElementById("remoteAudio");
-      if (!remoteStream) {
-        remoteStream = new MediaStream();
-        audio.srcObject = remoteStream;
-      }
-      remoteStream.addTrack(e.track);
-    };
-
-    await localConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
-    const answer = await localConnection.createAnswer();
-    await localConnection.setLocalDescription(answer);
-    db.ref("calls/" + getOtherUID()).push({ type: "answer", answer: answer });
-  }
-
-  if (data.type === "answer") {
-    await localConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
-  }
-
-  if (data.type === "candidate" && data.candidate) {
-    try {
-      await localConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
-    } catch (err) {
-      console.error("ICE candidate error:", err);
-    }
-  }
-});
-
-    let mediaRecorder;
-let audioChunks = [];
-let isRecording = false;
-
-function toggleRecording() {
-  if (isRecording) {
-    stopRecording();
-  } else {
-    startRecording();
-  }
-}
-
-function startRecording() {
-  navigator.mediaDevices.getUserMedia({ audio: true })
-    .then(stream => {
-      mediaRecorder = new MediaRecorder(stream);
-      mediaRecorder.start();
-      isRecording = true;
-      document.getElementById("recordBtn").textContent = "⏹️";
-
-      audioChunks = [];
-      mediaRecorder.ondataavailable = e => {
-        if (e.data.size > 0) audioChunks.push(e.data);
-      };
-
-      mediaRecorder.onstop = () => {
-        const blob = new Blob(audioChunks, { type: "audio/webm" });
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          const base64Audio = reader.result;
-          db.ref("messages").push({
-            uid: currentUser.uid,
-            text: null,
-            image: null,
-            audio: base64Audio,
-            timestamp: firebase.database.ServerValue.TIMESTAMP
-          });
-        };
-        reader.readAsDataURL(blob);
-        isRecording = false;
-        document.getElementById("recordBtn").textContent = "🎤";
-      };
-    })
-    .catch(err => {
-      alert("Gagal merekam suara: " + err.message);
-    });
-}
-
-function stopRecording() {
-  if (mediaRecorder && isRecording) {
-    mediaRecorder.stop();
-  }
-}
-
     const allowedUIDs = [
-  "vf7FnTInSxcK0YuyXjQLs9lkfpa2",
-  "mims0bnrQaMceoLXb6dW9DlEuf23"
-];
-    function showLastLogins() {
-  const infoDiv = document.createElement("div");
-  infoDiv.id = "lastLoginInfo";
-  infoDiv.style.fontSize = "14px";
-  infoDiv.style.color = "#555";
-  infoDiv.style.textAlign = "center";
-  infoDiv.style.marginBottom = "10px";
+      "vf7FnTInSxcK0YuyXjQLs9lkfpa2",
+      "mims0bnrQaMceoLXb6dW9DlEuf23"
+    ];
 
-  const uidMap = {
-    "vf7FnTInSxcK0YuyXjQLs9lkfpa2": "Maklampir",
-    "mims0bnrQaMceoLXb6dW9DlEuf23": "Grandong"
-  };
+    function backToLogin() {
+      document.getElementById("logoutScreen").style.display = "none";
+      document.getElementById("login").style.display = "block";
+    }
 
-  let content = "";
-
-  Promise.all(
-    Object.keys(uidMap).map(uid =>
-      db.ref("users/" + uid + "/lastLogin").once("value").then(snapshot => {
-        const time = snapshot.val();
-        const formatted = time
-          ? new Date(time).toLocaleString("id-ID", {
-              dateStyle: "short",
-              timeStyle: "short"
-            })
-          : "Belum login";
-        content += `<div>${uidMap[uid]}: ${formatted}</div>`;
-      })
-    )
-  ).then(() => {
-    infoDiv.innerHTML = content;
-    const chatBox = document.getElementById("chat");
-    const existing = document.getElementById("lastLoginInfo");
-    if (existing) existing.remove();
-    chatBox.prepend(infoDiv);
-  });
-}
-    function deleteOldMessages() {
-  const now = Date.now();
-  const threeDays = 3 * 24 * 60 * 60 * 1000;
-
-  db.ref("messages").once("value").then(snapshot => {
-    snapshot.forEach(child => {
-      const data = child.val();
-      if (data.timestamp && now - data.timestamp > threeDays) {
-        db.ref("messages/" + child.key).remove();
+    auth.onAuthStateChanged(user => {
+      if (user && allowedUIDs.includes(user.uid)) {
+        currentUser = user;
+        const lastLoginTime = new Date().toISOString();
+        db.ref("users/" + user.uid).update({ lastLogin: lastLoginTime });
+        document.getElementById("login").style.display = "none";
+        document.getElementById("chat").style.display = "flex";
+        deleteOldMessages();
+        listenMessages();
+        showLastLogins();
+      } else if (user) {
+        alert("Akun ini tidak diizinkan.");
+        auth.signOut();
+      } else {
+        currentUser = null;
+        document.getElementById("login").style.display = "block";
+        document.getElementById("chat").style.display = "none";
       }
     });
-  });
-}
-    function clearChat() {
-  const confirmed = confirm("Yakin ingin menghapus semua pesan?");
-  if (confirmed) {
-    db.ref("messages").remove()
-      .then(() => {
-        alert("Semua pesan berhasil dihapus.");
-      })
-      .catch(error => {
-        alert("Gagal menghapus pesan: " + error.message);
-      });
-  }
-}
-    function backToLogin() {
-  document.getElementById("logoutScreen").style.display = "none";
-  document.getElementById("login").style.display = "block";
-}
-
-auth.onAuthStateChanged(user => {
-  if (user && allowedUIDs.includes(user.uid)) {
-    currentUser = user;
-
-    async function startCall() {
-  console.log("▶️ startCall() dipanggil");
-
-  if (!currentUser) {
-    alert("Belum login");
-    return;
-  }
-
-  const otherUID = getOtherUID();
-  if (!otherUID) {
-    alert("Tidak ada user lain yang aktif");
-    return;
-  }
-
-  console.log("Memanggil UID:", otherUID);
-
-    const lastLoginTime = new Date().toISOString();
-    db.ref("users/" + user.uid).update({ lastLogin: lastLoginTime });
-
-    document.getElementById("login").style.display = "none";
-    document.getElementById("chat").style.display = "flex";
-
-    deleteOldMessages();
-    listenMessages();
-    showLastLogins();
-  } else if (user) {
-    alert("Akun ini tidak diizinkan.");
-    auth.signOut();
-  } else {
-    currentUser = null;
-    document.getElementById("login").style.display = "block";
-    document.getElementById("chat").style.display = "none";
-  }
-});
 
     function login() {
-  console.log("Login button clicked");
-  const email = document.getElementById("email").value;
-  const password = document.getElementById("password").value;
-  console.log("Email:", email, "Password:", password);
-  auth.signInWithEmailAndPassword(email, password)
-    .catch(error => alert(error.message));
-}
-
-    function register() {
       const email = document.getElementById("email").value;
       const password = document.getElementById("password").value;
-      auth.createUserWithEmailAndPassword(email, password).catch(error => alert(error.message));
+      auth.signInWithEmailAndPassword(email, password).catch(error => alert(error.message));
     }
 
     function logout() {
-  auth.signOut().then(() => {
-    const missYou = document.getElementById("missYou");
-    missYou.style.display = "flex";
-    setTimeout(() => {
-      missYou.style.opacity = "1";
-    }, 100); 
+      auth.signOut().then(() => {
+        const missYou = document.getElementById("missYou");
+        missYou.style.display = "flex";
+        setTimeout(() => { missYou.style.opacity = "1"; }, 100);
+        setTimeout(() => { missYou.style.opacity = "0"; }, 2000);
+        setTimeout(() => {
+          missYou.style.display = "none";
+          document.getElementById("login").style.display = "none";
+          document.getElementById("chat").style.display = "none";
+          document.getElementById("logoutScreen").style.display = "block";
+          document.getElementById("email").value = "";
+          document.getElementById("password").value = "";
+        }, 3500);
+      });
+    }
 
-    setTimeout(() => {
-      missYou.style.opacity = "0";
-    }, 2000);
+    function showLastLogins() {
+      const infoDiv = document.createElement("div");
+      infoDiv.id = "lastLoginInfo";
+      infoDiv.style.fontSize = "14px";
+      infoDiv.style.color = "#555";
+      infoDiv.style.textAlign = "center";
+      infoDiv.style.marginBottom = "10px";
 
-    setTimeout(() => {
-      missYou.style.display = "none";
-      document.getElementById("login").style.display = "none";
-      document.getElementById("chat").style.display = "none";
-      document.getElementById("logoutScreen").style.display = "block";
-      document.getElementById("email").value = "";
-      document.getElementById("password").value = "";
-    }, 3500);
-  });
-}
+      const uidMap = {
+        "vf7FnTInSxcK0YuyXjQLs9lkfpa2": "Maklampir",
+        "mims0bnrQaMceoLXb6dW9DlEuf23": "Grandong"
+      };
+
+      let content = "";
+
+      Promise.all(
+        Object.keys(uidMap).map(uid =>
+          db.ref("users/" + uid + "/lastLogin").once("value").then(snapshot => {
+            const time = snapshot.val();
+            const formatted = time
+              ? new Date(time).toLocaleString("id-ID", { dateStyle: "short", timeStyle: "short" })
+              : "Belum login";
+            content += `<div>${uidMap[uid]}: ${formatted}</div>`;
+          })
+        )
+      ).then(() => {
+        infoDiv.innerHTML = content;
+        const chatBox = document.getElementById("chat");
+        const existing = document.getElementById("lastLoginInfo");
+        if (existing) existing.remove();
+        chatBox.prepend(infoDiv);
+      });
+    }
+
+    function deleteOldMessages() {
+      const now = Date.now();
+      const threeDays = 3 * 24 * 60 * 60 * 1000;
+      db.ref("messages").once("value").then(snapshot => {
+        snapshot.forEach(child => {
+          const data = child.val();
+          if (data.timestamp && now - data.timestamp > threeDays) {
+            db.ref("messages/" + child.key).remove();
+          }
+        });
+      });
+    }
+
+    function clearChat() {
+      const confirmed = confirm("Yakin ingin menghapus semua pesan?");
+      if (confirmed) {
+        db.ref("messages").remove().then(() => alert("Semua pesan berhasil dihapus."))
+          .catch(error => alert("Gagal menghapus pesan: " + error.message));
+      }
+    }
+
+    let mediaRecorder;
+    let audioChunks = [];
+    let isRecording = false;
+
+    function toggleRecording() {
+      if (isRecording) {
+        mediaRecorder.stop();
+      } else {
+        navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+          mediaRecorder = new MediaRecorder(stream);
+          mediaRecorder.start();
+          isRecording = true;
+          document.getElementById("recordBtn").textContent = "⏹️";
+
+          audioChunks = [];
+          mediaRecorder.ondataavailable = e => {
+            if (e.data.size > 0) audioChunks.push(e.data);
+          };
+
+          mediaRecorder.onstop = () => {
+            const blob = new Blob(audioChunks, { type: "audio/webm" });
+            const reader = new FileReader();
+            reader.onloadend = () => {
+              const base64Audio = reader.result;
+              db.ref("messages").push({
+                uid: currentUser.uid,
+                text: null,
+                image: null,
+                audio: base64Audio,
+                timestamp: firebase.database.ServerValue.TIMESTAMP
+              });
+            };
+            reader.readAsDataURL(blob);
+            isRecording = false;
+            document.getElementById("recordBtn").textContent = "🎤";
+          };
+        }).catch(err => alert("Gagal merekam suara: " + err.message));
+      }
+    }
 
     function listenMessages() {
       db.ref("messages").off();
@@ -394,13 +222,13 @@ auth.onAuthStateChanged(user => {
           const msg = document.createElement("div");
           msg.className = "message" + (data.uid === currentUser.uid ? " you" : "");
           const time = data.timestamp ? new Date(data.timestamp).toLocaleTimeString("id-ID", { hour: '2-digit', minute: '2-digit' }) : '';
-msg.innerHTML = `
-  <div>${data.text || ""}</div>
-  ${data.image ? `<img src="${data.image}" />` : ""}
-  ${data.audio ? `<audio controls src="${data.audio}" style="margin-top:5px;"></audio>` : ""}
-  <div style="font-size: 12px; color: gray; margin-top: 4px;">${time}</div>
-  ${data.uid === currentUser.uid ? `<div class="delete" onclick="deleteMessage('${child.key}')">🗑️</div>` : ""}
-`;
+          msg.innerHTML = `
+            <div>${data.text || ""}</div>
+            ${data.image ? `<img src="${data.image}" />` : ""}
+            ${data.audio ? `<audio controls src="${data.audio}" style="margin-top:5px;"></audio>` : ""}
+            <div style="font-size: 12px; color: gray; margin-top: 4px;">${time}</div>
+            ${data.uid === currentUser.uid ? `<div class="delete" onclick="deleteMessage('${child.key}')">🗑️</div>` : ""}
+          `;
           messagesDiv.appendChild(msg);
         });
         messagesDiv.scrollTop = messagesDiv.scrollHeight;
@@ -467,8 +295,9 @@ msg.innerHTML = `
       });
     });
   </script>
-<div id="missYou" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:#000000cc; color:white; align-items:center; justify-content:center; font-size:2em; font-weight:bold; z-index:9999;">
-  i miss you
-</div>
+
+  <div id="missYou" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:#000000cc; color:white; align-items:center; justify-content:center; font-size:2em; font-weight:bold; z-index:9999;">
+    i miss you
+  </div>
 </body>
 </html>
