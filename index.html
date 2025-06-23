@@ -32,25 +32,26 @@
     <div id="messages"></div>
 
     <!-- Input Pesan -->
-    <div style="display: flex; align-items: center; gap: 5px;">
-      <input id="messageInput" type="text" placeholder="Ketik pesan..." style="flex: 1;" />
-      <button onclick="sendMessage()" style="padding: 10px;">📨</button>
-    </div>
+    <div style="display: flex; align-items: center; gap: 5px; margin-top: 10px;">
+  <input id="messageInput" type="text" placeholder="Ketik pesan..." style="flex-grow: 1; padding: 10px; border-radius: 6px;" />
+  <button onclick="sendMessage()" style="padding: 10px; min-width: 44px;">📨</button>
+</div>
 
     <!-- Tombol Bar -->
     <div style="display: flex; justify-content: space-between; margin-top: 8px;">
-      <label style="flex:1;">
-        <input id="videoInput" type="file" accept="video/*" style="display:none" onchange="sendMessage()" />
-        <button onclick="document.getElementById('videoInput').click()" style="width:100%;">🎥</button>
-      </label>
-      <label style="flex:1;">
-        <input id="imageInput" type="file" accept="image/*" style="display:none" onchange="sendMessage()" />
-        <button onclick="document.getElementById('imageInput').click()" style="width:100%;">📷</button>
-      </label>
-      <button onclick="toggleRecording()" style="flex:1;">🎤</button>
-      <button onclick="clearChat()" style="flex:1; color: red;">❌</button>
-      <button onclick="logout()" style="flex:1;">🚪</button>
-    </div>
+    <div style="display: flex; justify-content: space-between; gap: 5px; margin-top: 8px;">
+  <label style="flex: 1;">
+    <input id="videoInput" type="file" accept="video/*" style="display: none;" onchange="sendMessage()" />
+    <button onclick="document.getElementById('videoInput').click()" style="width: 100%;">🎥</button>
+  </label>
+  <label style="flex: 1;">
+    <input id="imageInput" type="file" accept="image/*" style="display: none;" onchange="sendMessage()" />
+    <button onclick="document.getElementById('imageInput').click()" style="width: 100%;">📷</button>
+  </label>
+  <button onclick="toggleRecording()" style="flex: 1;">🎤</button>
+  <button onclick="clearChat()" style="flex: 1; color: red;">❌</button>
+  <button onclick="logout()" style="flex: 1;">🚪</button>
+</div>
   </div>
 
   <div id="logoutScreen" style="display:none; text-align:center; margin:auto; padding:20px;">
