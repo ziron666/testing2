@@ -79,7 +79,7 @@
   <button onclick="clearChat()">Clear Chat</button>
 </div>
 
-  <div id="logoutScreen" style="display:none; text-align:center; margin:auto; padding:20px;">
+  <div id="logoutScreen" style="display:none; text-align:center; padding:20px; flex: 1; align-items:center; justify-content:center; flex-direction: column;">
     <h2>Sehat terus ya sayang, I love You..</h2>
     <button onclick="backToLogin()">Login</button>
   </div>
@@ -139,9 +139,11 @@
     ];
 
     function backToLogin() {
-      document.getElementById("logoutScreen").style.display = "none";
-      document.getElementById("login").style.display = "block";
-    }
+  document.getElementById("logoutScreen").style.display = "none";
+  document.getElementById("chat").style.display = "none";
+  document.getElementById("missYou").style.display = "none";
+  document.getElementById("login").style.display = "block";
+}
 
     auth.onAuthStateChanged(user => {
       if (user && allowedUIDs.includes(user.uid)) {
@@ -168,14 +170,18 @@
     }
 
     function logout() {
-      auth.signOut().then(() => {
-        document.getElementById("login").style.display = "none";
-        document.getElementById("chat").style.display = "none";
-        document.getElementById("logoutScreen").style.display = "block";
-        document.getElementById("email").value = "";
-        document.getElementById("password").value = "";
-      });
-    }
+  auth.signOut().then(() => {
+    // Reset tampilan
+    document.getElementById("login").style.display = "none";
+    document.getElementById("chat").style.display = "none";
+    document.getElementById("logoutScreen").style.display = "flex"; // ubah dari "block" ke "flex"
+    document.getElementById("missYou").style.display = "none";
+
+    // Bersihkan input
+    document.getElementById("email").value = "";
+    document.getElementById("password").value = "";
+  });
+}
 
     function clearChat() {
       if (confirm("Yakin ingin menghapus semua pesan?")) {
