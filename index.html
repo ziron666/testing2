@@ -15,7 +15,37 @@
     .message video { max-width: 100%; margin-top: 5px; border-radius: 4px; }
     .message .delete { position: absolute; top: 4px; right: 6px; cursor: pointer; color: red; font-size: 12px; }
     input, button { padding: 10px; margin: 5px 0; width: 100%; box-sizing: border-box; }
-    #inputArea { display: flex; gap: 5px; flex-direction: column; }
+    #inputArea {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+#inputArea .row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+#inputArea .row button,
+#inputArea .row input[type="file"],
+#inputArea .row input[type="text"] {
+  flex: 1;
+  min-width: 0;
+}
+
+#controlButtons {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  margin-top: 10px;
+}
+
+#controlButtons button {
+  flex: 1 1 48%;
+}
+
     #emojiList span { cursor: pointer; font-size: 20px; margin-right: 5px; }
   </style>
 </head>
@@ -31,15 +61,23 @@
     <div id="messages"></div>
     <div id="emojiList">😊 😂 ❤️ 😍 🙏 😢 😎 🤔 🎉 😡</div>
     <div id="inputArea">
-      <button id="recordBtn" onclick="toggleRecording()">🎤</button>
-      <input id="messageInput" type="text" placeholder="Ketik pesan..."/>
-      <input id="imageInput" type="file" accept="image/*"/>
-      <input id="videoInput" type="file" accept="video/*" />
-      <button onclick="sendMessage()">Kirim</button>
-    </div>
-    <button onclick="logout()">Logout</button>
-    <button onclick="clearChat()">Clear Chat</button>
+  <div class="row">
+    <input id="messageInput" type="text" placeholder="Ketik pesan..."/>
+    <button id="recordBtn" onclick="toggleRecording()">🎤</button>
   </div>
+  <div class="row">
+    <input id="imageInput" type="file" accept="image/*"/>
+    <input id="videoInput" type="file" accept="video/*"/>
+  </div>
+  <div class="row">
+    <button onclick="sendMessage()">Kirim</button>
+  </div>
+</div>
+
+<div id="controlButtons">
+  <button onclick="logout()">Logout</button>
+  <button onclick="clearChat()">Clear Chat</button>
+</div>
 
   <div id="logoutScreen" style="display:none; text-align:center; margin:auto; padding:20px;">
     <h2>Sehat terus ya sayang, I love You..</h2>
