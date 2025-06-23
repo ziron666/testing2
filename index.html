@@ -73,7 +73,23 @@ let remoteStream;
 let isCalling = false;
 
 async function startCall() {
-  if (!currentUser) return;
+  console.log("▶️ startCall() dipanggil");
+
+  if (!currentUser) {
+    alert("Belum login");
+    return;
+  }
+
+  const otherUID = getOtherUID();
+  if (!otherUID) {
+    alert("Tidak ada user lain yang aktif");
+    return;
+  }
+
+  console.log("Memanggil UID:", otherUID);
+
+  document.getElementById("messages").innerHTML +=
+  `<div style="text-align:center; color:blue; font-weight:bold;">📞 Sedang memanggil...</div>`;
 
   isCalling = true;
 
@@ -294,6 +310,22 @@ function stopRecording() {
 auth.onAuthStateChanged(user => {
   if (user && allowedUIDs.includes(user.uid)) {
     currentUser = user;
+
+    async function startCall() {
+  console.log("▶️ startCall() dipanggil");
+
+  if (!currentUser) {
+    alert("Belum login");
+    return;
+  }
+
+  const otherUID = getOtherUID();
+  if (!otherUID) {
+    alert("Tidak ada user lain yang aktif");
+    return;
+  }
+
+  console.log("Memanggil UID:", otherUID);
 
     const lastLoginTime = new Date().toISOString();
     db.ref("users/" + user.uid).update({ lastLogin: lastLoginTime });
